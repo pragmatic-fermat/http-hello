@@ -49,6 +49,15 @@ jobs:
 
           # Expose la version pour les steps suivants
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit updated version.txt
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add version.txt
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+          git push
         
       - name: Checkout
         uses: actions/checkout@v4
