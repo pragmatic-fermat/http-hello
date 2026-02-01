@@ -27,6 +27,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Bump version.txt (patch)
+        id: bump
+        run: |
+          VERSION=$(cat version.txt)
+          echo "Current version: $VERSION"
+
+          # Supprime le "v", split sur les points
+          VERSION_NO_V=${VERSION#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NO_V"
+
+          # Incrément patch
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+
+          echo "New version: $NEW_VERSION"
+
+          # Écrit dans version.txt
+          echo "$NEW_VERSION" > version.txt
+
+          # Expose la version pour les steps suivants
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        
       - name: Checkout
         uses: actions/checkout@v4
 
