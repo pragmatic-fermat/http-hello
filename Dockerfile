@@ -1,3 +1,3 @@
 FROM nginx
 
-COPY version.txt /usr/shar/nginx/html/index.html
+COPY version.txt /usr/share/nginx/html/index.html
