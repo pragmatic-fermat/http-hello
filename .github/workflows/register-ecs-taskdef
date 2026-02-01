@@ -1,0 +1,64 @@
+name: register-ecs-taskdef
+on:
+  workflow_run:
+    workflows: ["build-push-ghcr"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  id-token: write   # OIDC vers AWS
+
+env:
+  AWS_REGION: eu-west-3
+  TASKDEF_FAMILY: taskdef        # <-- à remplacer
+  CONTAINER_NAME: httpd            # <-- à remplacer
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  register:
+    # ne lance que si le workflow A a réussi
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (default branch)
+        uses: actions/checkout@v4
+
+      - name: Read version from version.txt
+        id: v
+        run: |
+          VERSION=$(cat version.txt)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version is $VERSION"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "${{ env.TASKDEF_FAMILY }}" \
+            --query taskDefinition \
+            --output json > taskdef.json
+
+      - name: Render task definition with new image
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: taskdef.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.GHCR_IMAGE }}:${{ steps.v.outputs.version }}
+
+      - name: Register new task definition revision
+        id: register
+        run: |
+          NEW_TD_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://${{ steps.render.outputs.task-definition }} \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+          echo "new_td_arn=$NEW_TD_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition: $NEW_TD_ARN"
