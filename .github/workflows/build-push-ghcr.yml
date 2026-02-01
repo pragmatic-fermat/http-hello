@@ -1,5 +1,4 @@
-name: Release -> GHCR -> ECS (native Blue/Green)
-
+name: build-push-ghcr
 on:
   release:
     types: [published]
@@ -7,16 +6,6 @@ on:
 permissions:
   contents: write
   packages: write
-  id-token: write   # OIDC vers AWS
-
-env:
-  AWS_REGION: eu-west-3
-
-  # ECS
-  ECS_CLUSTER: default
-  ECS_SERVICE: podinfo
-  TASKDEF_FAMILY: podinfo          # family ou ARN de task definition (sans :revision => latest active)
-  CONTAINER_NAME: app              # nom du container dans la task definition
 
   # GHCR
   REGISTRY: ghcr.io
