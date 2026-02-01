@@ -27,7 +27,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+    
+      - name: Checkout
+        uses: actions/checkout@v4
+        
       - name: Bump version.txt (patch)
         id: bump
         run: |
@@ -58,9 +61,6 @@ jobs:
           git add version.txt
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
           git push
-        
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Login to GHCR
         uses: docker/login-action@v3
